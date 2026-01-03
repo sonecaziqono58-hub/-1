@@ -9,9 +9,9 @@ import { Note, RainConfig } from './types';
 
 const App: React.FC = () => {
   const [config, setConfig] = useState<RainConfig>({
-    size: 1.0,
-    speed: 0.5, 
-    mist: 0.4
+    size: 1.2,
+    speed: 0.45, 
+    mist: 0.35
   });
 
   const [notes, setNotes] = useState<Note[]>(() => {
@@ -19,7 +19,7 @@ const App: React.FC = () => {
     if (saved) return JSON.parse(saved);
     return [{
       id: '1',
-      content: '窗外的灯火汇聚成模糊的光斑，在雨幕中缓缓移动。列车正带着我们驶向远方，而此刻的时间，只属于文字与思绪。\n\n听着连绵的雨声，心境变得格外安稳。',
+      content: '雨水如珠，在温热的指尖划过玻璃时化作涟漪。列车正穿过城市的霓虹，那些模糊的光斑像是融化的梦境。\n\n深夜的旅途，总是让人想要留下些什么。',
       date: new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' }),
       time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })
     }];
@@ -68,55 +68,55 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-[#05070a]">
-      {/* Deepest Layer - Moody Night Landscape */}
+    <div className="relative w-screen h-screen overflow-hidden bg-[#04060b]">
+      {/* Background - Far city silhouettes and moody sky */}
       <div 
         className="absolute inset-0 bg-cover z-0"
         style={{ 
-          backgroundImage: 'url("https://images.unsplash.com/photo-1518173946687-a4c8a9b746f5?ixlib=rb-4.0.3&auto=format&fit=crop&w=3000&q=80")',
-          filter: `brightness(25%) blur(${30 + config.mist * 25}px) saturate(40%)`,
-          animation: 'moving-bg 300s linear infinite',
+          backgroundImage: 'url("https://images.unsplash.com/photo-1514565131-fce0801e5785?ixlib=rb-4.0.3&auto=format&fit=crop&w=3000&q=80")',
+          filter: `brightness(20%) blur(${25 + config.mist * 20}px) saturate(30%)`,
+          animation: 'moving-bg 400s linear infinite',
           backgroundRepeat: 'repeat-x',
           backgroundSize: 'auto 100%',
           transform: 'scale(1.1)'
         }}
       />
       
-      {/* Mid Layer - City Bokeh Lights (Orbs) */}
+      {/* Midground - Stronger Bokeh Light Orbs */}
       <div 
-        className="absolute inset-0 bg-cover z-0 opacity-20 mix-blend-screen pointer-events-none"
+        className="absolute inset-0 bg-cover z-0 opacity-30 mix-blend-screen pointer-events-none"
         style={{ 
-          backgroundImage: 'url("https://images.unsplash.com/photo-1514565131-fce0801e5785?ixlib=rb-4.0.3&auto=format&fit=crop&w=2500&q=80")',
-          filter: `blur(45px)`,
-          animation: 'moving-bg 80s linear infinite',
+          backgroundImage: 'url("https://images.unsplash.com/photo-1485846234645-a62644efb4e7?ixlib=rb-4.0.3&auto=format&fit=crop&w=2500&q=80")',
+          filter: `blur(40px) brightness(1.5)`,
+          animation: 'moving-bg 120s linear infinite',
           backgroundRepeat: 'repeat-x',
-          backgroundSize: 'auto 110%',
-          transform: 'translateY(-5%)'
+          backgroundSize: 'auto 115%',
+          transform: 'translateY(-2%)'
         }}
       />
 
-      {/* Bokeh Overlays for extra depth */}
+      {/* Dynamic Floating Bokeh Spots */}
       <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
-        {[...Array(6)].map((_, i) => (
+        {[...Array(8)].map((_, i) => (
           <div 
             key={i}
-            className="absolute rounded-full blur-[100px] opacity-[0.05]"
+            className="absolute rounded-full blur-[120px] opacity-[0.08]"
             style={{
-              width: `${200 + Math.random() * 400}px`,
-              height: `${200 + Math.random() * 400}px`,
+              width: `${300 + Math.random() * 500}px`,
+              height: `${300 + Math.random() * 500}px`,
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
-              background: i % 2 === 0 ? '#4a90e2' : '#e2904a',
-              animation: `bokeh-float ${10 + Math.random() * 20}s infinite ease-in-out alternate`
+              background: i % 3 === 0 ? '#5da9ff' : (i % 3 === 1 ? '#ffb35d' : '#ff5d5d'),
+              animation: `bokeh-float ${15 + Math.random() * 30}s infinite ease-in-out alternate`
             }}
           />
         ))}
       </div>
 
-      {/* Window Frame & Texture */}
-      <div className="absolute inset-0 pointer-events-none z-10 opacity-15 bg-[url('https://www.transparenttextures.com/patterns/dust.png')]"></div>
-      <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_300px_rgba(0,0,0,0.95)]"></div>
-      <div className="absolute inset-0 pointer-events-none z-10 border-[40px] border-black/15 rounded-3xl"></div>
+      {/* Glass Pane Overlays */}
+      <div className="absolute inset-0 pointer-events-none z-10 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/black-linen-2.png')]"></div>
+      <div className="absolute inset-0 pointer-events-none z-10 shadow-[inset_0_0_400px_rgba(0,0,0,1)]"></div>
+      <div className="absolute inset-0 pointer-events-none z-10 border-[50px] border-black/20 rounded-[3rem]"></div>
 
       {/* Rain Physics Layer */}
       <RainCanvas config={config} />
@@ -124,10 +124,10 @@ const App: React.FC = () => {
       {/* Interactive Water Ripple Layer */}
       <RippleEffect />
       
-      {/* Controls */}
+      {/* HUD Controls */}
       <Controls config={config} setConfig={setConfig} />
 
-      {/* Draggable Editor */}
+      {/* Editor Window */}
       <Editor 
         notes={notes}
         currentIndex={currentIndex}
@@ -139,7 +139,7 @@ const App: React.FC = () => {
         onSave={handleSave}
       />
 
-      {/* Compact Music Player */}
+      {/* Rain White Noise */}
       <MusicPlayer />
 
       <style>{`
@@ -148,8 +148,8 @@ const App: React.FC = () => {
           to { background-position: 100% 0%; }
         }
         @keyframes bokeh-float {
-          from { transform: translate(0, 0); }
-          to { transform: translate(50px, 30px); }
+          from { transform: translate(0, 0) scale(1); }
+          to { transform: translate(100px, 60px) scale(1.2); }
         }
       `}</style>
     </div>

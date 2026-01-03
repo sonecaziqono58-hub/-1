@@ -6,14 +6,15 @@ interface RainCanvasProps {
   config: RainConfig;
 }
 
-class BeadedDroplet {
+class RealisticDrop {
   x: number;
   y: number;
   r: number;
   speed: number;
   opacity: number;
   isSliding: boolean;
-  slideProgress: number;
+  slideWait: number;
+  trail: { y: number; opacity: number }[] = [];
   canvasWidth: number;
   canvasHeight: number;
 
@@ -25,82 +26,107 @@ class BeadedDroplet {
 
   reset(width: number, height: number, config: RainConfig, isInitial: boolean = false) {
     this.x = Math.random() * width;
-    this.y = isInitial ? Math.random() * height : -30;
+    this.y = isInitial ? Math.random() * height : -50;
     
     const roll = Math.random();
-    if (roll > 0.96) {
-      this.r = (Math.random() * 4 + 3) * config.size; 
+    if (roll > 0.92) {
+      // Very large beads
+      this.r = (Math.random() * 6 + 4) * config.size; 
       this.isSliding = true;
-    } else if (roll > 0.85) {
-      this.r = (Math.random() * 2 + 1) * config.size;
-      this.isSliding = Math.random() > 0.5;
+    } else if (roll > 0.7) {
+      // Medium droplets
+      this.r = (Math.random() * 3 + 1.5) * config.size;
+      this.isSliding = Math.random() > 0.4;
     } else {
-      this.r = (Math.random() * 0.8 + 0.3) * config.size;
-      this.isSliding = Math.random() > 0.95;
+      // Fine condensation
+      this.r = (Math.random() * 1.2 + 0.4) * config.size;
+      this.isSliding = Math.random() > 0.9;
     }
 
-    this.speed = (Math.random() * 0.4 + 0.2) * config.speed;
-    this.opacity = Math.random() * 0.4 + 0.15;
-    this.slideProgress = 0;
+    this.speed = (Math.random() * 0.6 + 0.2) * config.speed;
+    this.opacity = Math.random() * 0.5 + 0.2;
+    this.slideWait = Math.random() * 100;
+    this.trail = [];
   }
 
   update(config: RainConfig) {
     if (this.isSliding) {
-      // Realistic stuttering slide: water accumulates mass before moving
-      this.slideProgress += 0.01 * Math.random();
-      if (this.slideProgress > 0.5) {
-        const acceleration = (this.r / 5) * 4;
-        this.y += this.speed * acceleration;
+      if (this.slideWait > 0) {
+        this.slideWait -= 1;
+      } else {
+        // Stuttering motion - gravity overcoming surface tension
+        const stutter = Math.random() > 0.95 ? 12 : (Math.random() > 0.8 ? 2 : 0.4);
+        const oldY = this.y;
+        this.y += this.speed * stutter * 5;
+        
+        // Horizontal drift (train speed)
+        this.x -= 0.15 * config.speed;
+
+        // Leave a trail
+        if (this.r > 2 && Math.abs(this.y - oldY) > 1) {
+          this.trail.push({ y: this.y, opacity: this.opacity * 0.5 });
+          if (this.trail.length > 15) this.trail.shift();
+        }
       }
-      
-      // Horizontal drift (simulating wind/train speed)
-      this.x -= 0.12 * config.speed;
     } else {
-      // Very slow drift for static condensation
-      this.x -= 0.015 * config.speed;
+      // Ambient vibration/drift
+      this.x -= 0.02 * config.speed;
     }
 
-    if (this.y > this.canvasHeight + 30) {
+    if (this.y > this.canvasHeight + 50) {
       this.reset(this.canvasWidth, this.canvasHeight, config);
     }
-    if (this.x < -30) this.x = this.canvasWidth + 30;
+    if (this.x < -50) this.x = this.canvasWidth + 50;
   }
 
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
+    
+    // Draw the wet trail first
+    if (this.trail.length > 0) {
+      ctx.beginPath();
+      const trailGrad = ctx.createLinearGradient(this.x, this.y - 100, this.x, this.y);
+      trailGrad.addColorStop(0, 'rgba(255,255,255,0)');
+      trailGrad.addColorStop(1, `rgba(255,255,255,${this.opacity * 0.2})`);
+      ctx.strokeStyle = trailGrad;
+      ctx.lineWidth = this.r * 0.8;
+      ctx.lineCap = 'round';
+      ctx.moveTo(this.x, this.y - 60);
+      ctx.lineTo(this.x, this.y - this.r);
+      ctx.stroke();
+    }
+
     ctx.translate(this.x, this.y);
 
-    // Main bead body - subtle refraction
+    // Realistic refraction gradient for the droplet
     const radGrad = ctx.createRadialGradient(
-      -this.r * 0.1, -this.r * 0.1, this.r * 0.1, 
+      -this.r * 0.2, -this.r * 0.2, this.r * 0.1, 
       0, 0, this.r
     );
-    radGrad.addColorStop(0, `rgba(255, 255, 255, ${this.opacity * 0.4})`);
-    radGrad.addColorStop(0.7, `rgba(255, 255, 255, ${this.opacity * 0.15})`);
-    radGrad.addColorStop(0.9, `rgba(255, 255, 255, ${this.opacity * 0.7})`);
+    // Dark core for depth
+    radGrad.addColorStop(0, `rgba(0, 0, 0, ${this.opacity * 0.1})`);
+    // Light-catching rim
+    radGrad.addColorStop(0.5, `rgba(255, 255, 255, ${this.opacity * 0.1})`);
+    radGrad.addColorStop(0.85, `rgba(255, 255, 255, ${this.opacity * 0.6})`);
     radGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
 
     ctx.fillStyle = radGrad;
     ctx.beginPath();
-    ctx.arc(0, 0, this.r, 0, Math.PI * 2);
+    // Slightly non-spherical drops for realism
+    ctx.ellipse(0, 0, this.r, this.r * (this.isSliding ? 1.1 : 1), 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Specular highlight - the "sparkle"
+    // Sharp specular highlight (the light reflection)
     ctx.beginPath();
     ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 1.5})`;
-    ctx.arc(-this.r * 0.35, -this.r * 0.35, this.r * 0.18, 0, Math.PI * 2);
+    ctx.arc(-this.r * 0.4, -this.r * 0.4, this.r * 0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Subtle trail if sliding
-    if (this.isSliding && this.slideProgress > 0.5 && this.r > 2) {
-      ctx.beginPath();
-      const trailGrad = ctx.createLinearGradient(0, -this.r, 0, -this.r * 4);
-      trailGrad.addColorStop(0, `rgba(255, 255, 255, ${this.opacity * 0.2})`);
-      trailGrad.addColorStop(1, `rgba(255, 255, 255, 0)`);
-      ctx.fillStyle = trailGrad;
-      ctx.ellipse(0, -this.r * 2.5, this.r * 0.4, this.r * 2.5, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
+    // Secondary smaller highlight for "beady" look
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.8})`;
+    ctx.arc(this.r * 0.3, this.r * 0.5, this.r * 0.1, 0, Math.PI * 2);
+    ctx.fill();
 
     ctx.restore();
   }
@@ -108,7 +134,7 @@ class BeadedDroplet {
 
 const RainCanvas: React.FC<RainCanvasProps> = ({ config }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const droplets = useRef<BeadedDroplet[]>([]);
+  const droplets = useRef<RealisticDrop[]>([]);
 
   const init = useCallback(() => {
     const canvas = canvasRef.current;
@@ -118,8 +144,9 @@ const RainCanvas: React.FC<RainCanvasProps> = ({ config }) => {
     canvas.width = w;
     canvas.height = h;
 
-    const count = Math.floor((w * h) / 1800); 
-    droplets.current = Array.from({ length: Math.min(count, 1500) }, () => new BeadedDroplet(w, h, config, true));
+    // Adjust density based on screen size
+    const count = Math.floor((w * h) / 3500); 
+    droplets.current = Array.from({ length: Math.min(count, 800) }, () => new RealisticDrop(w, h, config, true));
   }, [config]);
 
   useEffect(() => {
@@ -133,10 +160,11 @@ const RainCanvas: React.FC<RainCanvasProps> = ({ config }) => {
       if (!ctx || !canvasRef.current) return;
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
       
-      // Fog layer
-      ctx.fillStyle = `rgba(8, 12, 20, ${0.25 + config.mist * 0.45})`;
+      // Dynamic glass "fog"
+      ctx.fillStyle = `rgba(10, 15, 25, ${0.2 + config.mist * 0.5})`;
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
+      // Sort or draw carefully to ensure layering? Usually not needed for simple drops
       droplets.current.forEach(d => {
         d.update(config);
         d.draw(ctx);
@@ -155,7 +183,7 @@ const RainCanvas: React.FC<RainCanvasProps> = ({ config }) => {
     <canvas 
       ref={canvasRef} 
       className="fixed inset-0 z-0 pointer-events-none"
-      style={{ filter: `blur(${config.mist * 0.8}px)` }}
+      style={{ filter: `blur(${config.mist * 0.5}px)` }}
     />
   );
 };

@@ -10,12 +10,13 @@ const RippleEffect: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    // Use full resolution for smoother ripples across the whole screen
     let width = Math.floor(window.innerWidth / 2);
     let height = Math.floor(window.innerHeight / 2);
     canvas.width = width;
     canvas.height = height;
 
-    const damping = 0.99; 
+    const damping = 0.985; 
     const size = width * height;
     let buffer1 = new Float32Array(size);
     let buffer2 = new Float32Array(size);
@@ -32,17 +33,17 @@ const RippleEffect: React.FC = () => {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
-      const x = Math.floor(e.clientX / 2);
-      const y = Math.floor(e.clientY / 2);
+      const x = Math.floor((e.clientX / window.innerWidth) * width);
+      const y = Math.floor((e.clientY / window.innerHeight) * height);
       
-      const radius = 8;
+      const radius = 10; // Much larger mouse impact radius
       for (let j = -radius; j <= radius; j++) {
         for (let i = -radius; i <= radius; i++) {
           if (i * i + j * j <= radius * radius) {
             const nx = x + i;
             const ny = y + j;
             if (nx > 0 && nx < width - 1 && ny > 0 && ny < height - 1) {
-              buffer1[ny * width + nx] = 1500; 
+              buffer1[ny * width + nx] = 2500; // Stronger impulse
             }
           }
         }
@@ -69,12 +70,13 @@ const RippleEffect: React.FC = () => {
         const val = buffer2[i];
         const index = i * 4;
         
-        if (val > 0.1) {
-            // Refraction shimmer
+        if (val > 0.05) {
+            // High contrast shimmering liquid effect
             data[index] = 255;     
             data[index + 1] = 255; 
             data[index + 2] = 255; 
-            data[index + 3] = Math.min(val * 0.5, 90); 
+            // Map ripple intensity to alpha
+            data[index + 3] = Math.min(val * 0.6, 110); 
         }
       }
 
@@ -100,11 +102,11 @@ const RippleEffect: React.FC = () => {
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-10"
       style={{ 
-        mixBlendMode: 'plus-lighter', 
+        mixBlendMode: 'screen', 
         width: '100vw', 
         height: '100vh',
-        filter: 'blur(5px) saturate(200%)',
-        opacity: 0.8
+        filter: 'blur(4px) contrast(150%) brightness(1.1)',
+        opacity: 0.9
       }}
     />
   );
