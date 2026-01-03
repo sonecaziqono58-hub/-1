@@ -1,0 +1,7 @@
+{
+  "name": "Nordic Rain Memo Editor",
+  "description": "A minimalist, atmospheric memo editor set against a rainy window with adjustable rain physics and integrated ambient music.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
